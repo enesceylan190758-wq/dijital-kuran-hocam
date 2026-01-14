@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijital Kuran Hocam</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #f4f7f6;
+            color: #333;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            margin-bottom: 25px;
+            font-weight: 600;
+            color: #95a5a6;
+            min-height: 24px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);
+        }
+
+        button:hover {
+            background: #2ecc71;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(39, 174, 96, 0.3);
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .active {
+            color: #27ae60;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>📖 Dijital Kuran Hocam</h1>
+        <div class="subtitle">Yapay Zeka Destekli Kuran Öğretmeni</div>
+
+        <!-- Web Call Section -->
+        <div>
+            <div id="status" class="status">Ders İçin Hazır</div>
+            <button id="toggleBtn">Hocayla Konuşmaya Başla</button>
+        </div>
+
+        <!-- Phone Call Section Removed for simplicity in this demo, or can be kept if needed. Keeping simple for now to focus on the conversion. 
+             If user wants phone call, we can re-add or just hide it. Let's comment it out to clean up the interface for the Quran app vibe. -->
+        <!-- 
+        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <h3>📱 Telefonla Arat</h3>
+            ...
+        </div> 
+        -->
+    </div>
+
+    <!-- Phone Call Section -->
+    <div>
+        <h3>📱 Telefonla Arat (Outbound)</h3>
+        <input type="text" id="phoneNumber" placeholder="+905551234567"
+            style="padding: 10px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; width: 200px; margin-bottom: 10px;">
+        <br>
+        <button id="callBtn" style="background: #28a745;">Telefonumu Ara</button>
+        <div id="phoneStatus" class="status" style="margin-top: 10px;"></div>
+    </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/retell-client-js-sdk@latest/dist/index.umd.js"></script>
+    <script>
+        const retellWebClient = new retell.RetellWebClient();
+        const toggleBtn = document.getElementById('toggleBtn');
+        const statusEl = document.getElementById('status');
+        let isCalling = false;
+
+        // Listen to events
+        retellWebClient.on("call_started", () => {
+            console.log("Call started");
+            statusEl.textContent = "📞 Görüşme Sürüyor...";
+            statusEl.className = "status active";
+            toggleBtn.textContent = "Görüşmeyi Bitir";
+            toggleBtn.style.background = "#dc3545";
+        });
+
+        retellWebClient.on("call_ended", () => {
+            console.log("Call ended");
+            resetUI();
+        });
+
+        retellWebClient.on("error", (error) => {
+            console.error("Error:", error);
+            statusEl.textContent = "❌ Hata: " + error.message;
+            statusEl.className = "status error";
+            resetUI();
+        });
+
+        function resetUI() {
+            statusEl.textContent = "Aramaya Hazır";
+            statusEl.className = "status";
+            toggleBtn.textContent = "Konuşmayı Başlat";
+            toggleBtn.style.background = "#007bff";
+            toggleBtn.disabled = false;
+            isCalling = false;
+        }
+
+        toggleBtn.addEventListener('click', async () => {
+            if (isCalling) {
+                retellWebClient.stopCall();
+            } else {
+                toggleBtn.disabled = true;
+                statusEl.textContent = "Bağlanıyor...";
+
+                try {
+                    // Get Access Token from our server
+                    const response = await fetch("http://localhost:8000/register-call", { method: "POST" });
+                    if (!response.ok) throw new Error("Token alınamadı");
+
+                    const data = await response.json();
+
+                    // Start Call
+                    await retellWebClient.startCall({
+                        accessToken: data.access_token,
+                    });
+                    isCalling = true;
+                    toggleBtn.disabled = false;
+
+                } catch (err) {
+                    console.error(err);
+                    statusEl.textContent = "Hata: Sunucuya bağlanılamadı";
+                    statusEl.className = "status error";
+                    toggleBtn.disabled = false;
+                }
+            }
+        });
+
+        // Outbound Call Logic
+        const callBtn = document.getElementById('callBtn');
+        const phoneInput = document.getElementById('phoneNumber');
+        const phoneStatus = document.getElementById('phoneStatus');
+
+        callBtn.addEventListener('click', async () => {
+            const number = phoneInput.value;
+            if (!number) {
+                phoneStatus.textContent = "Lütfen numara girin!";
+                phoneStatus.className = "status error";
+                return;
+            }
+
+            callBtn.disabled = true;
+            callBtn.textContent = "Aranıyor...";
+            phoneStatus.textContent = "Arama başlatılıyor...";
+            phoneStatus.className = "status";
+
+            try {
+                const response = await fetch("http://localhost:8000/create-phone-call", {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to_number: number })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Hata oluştu");
+                }
+
+                const data = await response.json();
+                phoneStatus.textContent = "✅ Arama Başlatıldı! Telefonunuz çalacak.";
+                phoneStatus.className = "status active";
+                callBtn.textContent = "Tekrar Ara";
+
+            } catch (err) {
+                console.error(err);
+                phoneStatus.textContent = "❌ Hata: " + err.message;
+                phoneStatus.className = "status error";
+                callBtn.textContent = "Telefonumu Ara";
+            } finally {
+                callBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

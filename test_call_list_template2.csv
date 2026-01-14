@@ -1,0 +1,3 @@
+phone number,ignore e164 validation,dynamic variable1,dynamic variable2,metadata
+14001231234,false,value1 (optional),value2 (optional),"{""key"":""value""}"
++905491190819,false,Enes,Sağlık Turizmi Test,"{""source"": ""Sella CRM""}"

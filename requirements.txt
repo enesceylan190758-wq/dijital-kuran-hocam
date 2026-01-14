@@ -1,0 +1,5 @@
+retell-sdk
+python-dotenv
+fastapi
+uvicorn
+google-generativeai

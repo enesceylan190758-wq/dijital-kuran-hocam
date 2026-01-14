@@ -1,0 +1,20 @@
+# Retell AI Custom LLM Kurulumu (Windows)
+
+Bu sistem, Retell AI'ın sizin bilgisayarınızdaki "Zeka" (Gemini) ile konuşmasını sağlar.
+
+## Kurulum Adımları
+
+1.  **Klasörü Kopyalayın:** Bu klasörü bilgisayarınıza alın.
+2.  **Ngrok Kurun:**
+    *   Windows bilgisayarınızda Ngrok yüklü olmalıdır (ngrok.com).
+    *   `ngrok.exe` dosyasını bu klasörün içine atarsanız daha kolay olur.
+3.  **Başlatın:** `baslat_windows.bat` dosyasına çift tıklayın.
+    *   İki pencere açılacak: Biri sunucu, biri Ngrok.
+    *   Ngrok penceresindeki `https://....ngrok-free.app` adresini kopyalayın.
+4.  **Retell Ayarı:**
+    *   Retell Dashboard > Agents > Agent'ınızı seçin.
+    *   LLM Ayarını "Custom LLM" yapın.
+    *   URL kısmına kopyaladığınız adresi yapıştırın ve sonuna `/llm-websocket` ekleyin.
+    *   Örnek: `wss://kdsjfksdf.ngrok-free.app/llm-websocket`
+
+Artık arama geldiğinde cevapları sizin bilgisayarınız verecek!
