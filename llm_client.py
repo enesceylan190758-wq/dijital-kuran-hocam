@@ -12,7 +12,10 @@ class LlmClient:
         # Build prompt from transcript
         # Load system prompt from file
         try:
-            with open("system_prompt.txt", "r", encoding="utf-8") as f:
+            # Use absolute path for Vercel compatibility
+            base_dir = os.path.dirname(__file__)
+            prompt_path = os.path.join(base_dir, "system_prompt.txt")
+            with open(prompt_path, "r", encoding="utf-8") as f:
                 system_prompt = f.read().strip()
         except Exception:
             system_prompt = "You are a helpful assistant."

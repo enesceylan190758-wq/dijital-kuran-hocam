@@ -44,7 +44,11 @@ class CreateCallRequest(BaseModel):
 
 @app.get("/")
 async def read_root():
-    with open("index.html", "r") as f:
+    # Use absolute path for Vercel compatibility
+    file_path = os.path.join(os.path.dirname(__file__), "index.html")
+    if not os.path.exists(file_path):
+        return HTMLResponse(content="<h1>Error: index.html not found</h1>", status_code=404)
+    with open(file_path, "r") as f:
         return HTMLResponse(content=f.read())
 
 @app.post("/register-call", response_model=RegisterCallResponse)
