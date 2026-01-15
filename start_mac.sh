@@ -51,16 +51,10 @@ echo "Step 3: Starting Servers..."
 echo "Server logs will appear below. Press CTRL+C to stop everything."
 echo ""
 
-# Start Frontend Server in background to serve the Web UI and API
-python3 "$DIR/server.py" &
-FRONTEND_PID=$!
-
-echo "Frontend Server started (PID: $FRONTEND_PID) on http://localhost:8000"
-
-# Run the backend python script (LLM Logic)
-echo "Starting Backend Server (LLM Logic)..."
+# Start Combined Server
+echo "Starting Application Server..."
+echo "Server is running on: http://localhost:8080"
 python3 "$DIR/custom_llm_server.py"
 
 # Cleanup on exit
-kill $FRONTEND_PID
 pkill -f "ngrok"
