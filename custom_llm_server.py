@@ -3,11 +3,13 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from concurrent.futures import TimeoutError as ConnectionTimeoutError
 from retell import Retell
-from llm_client import LlmClient  # We will create this next
+from llm_client import LlmClient
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -19,10 +21,69 @@ logging.basicConfig(
 logger = logging.getLogger("retell_custom_llm")
 
 app = FastAPI()
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 retell = Retell(api_key=os.getenv("RETELL_API_KEY"))
 
 # LLM Client initialization
 llm_client = LlmClient()
+
+# Pydantic models
+class RegisterCallResponse(BaseModel):
+    access_token: str
+
+class CreateCallRequest(BaseModel):
+    to_number: str
+
+@app.get("/")
+async def read_root():
+    with open("index.html", "r") as f:
+        return HTMLResponse(content=f.read())
+
+@app.post("/register-call", response_model=RegisterCallResponse)
+async def register_call():
+    agent_id = os.getenv("RETELL_AGENT_ID")
+    if not agent_id:
+        raise HTTPException(status_code=500, detail="RETELL_AGENT_ID not set in .env")
+
+    try:
+        # Register the call to get an access token
+        call_response = retell.call.register(
+            agent_id=agent_id,
+        )
+        print(f"Call registered: {call_response.call_id}")
+        return {"access_token": call_response.access_token}
+    except Exception as e:
+        print(f"Error registering call: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/create-phone-call")
+async def create_phone_call(request: CreateCallRequest):
+    agent_id = os.getenv("RETELL_AGENT_ID")
+    from_number = "+16825169466" 
+    
+    if not agent_id:
+        raise HTTPException(status_code=500, detail="RETELL_AGENT_ID not set")
+
+    try:
+        print(f"Initiating call from {from_number} to {request.to_number}...")
+        call_response = retell.call.create_phone_call(
+            from_number=from_number,
+            to_number=request.to_number,
+            agent_id=agent_id
+        )
+        print(f"Call started: {call_response.call_id}")
+        return {"call_id": call_response.call_id}
+    except Exception as e:
+        print(f"Error creating phone call: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.websocket("/llm-websocket/{call_id}")
 async def websocket_endpoint(websocket: WebSocket, call_id: str):

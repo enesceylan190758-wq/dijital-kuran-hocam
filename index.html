@@ -161,7 +161,7 @@
 
                 try {
                     // Get Access Token from our server
-                    const response = await fetch("http://localhost:8000/register-call", { method: "POST" });
+                    const response = await fetch("/register-call", { method: "POST" });
                     if (!response.ok) throw new Error("Token alınamadı");
 
                     const data = await response.json();
@@ -201,7 +201,7 @@
             phoneStatus.className = "status";
 
             try {
-                const response = await fetch("http://localhost:8000/create-phone-call", {
+                const response = await fetch("/create-phone-call", {
                     method: "POST",
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ to_number: number })
